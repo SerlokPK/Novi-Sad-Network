@@ -296,10 +296,6 @@ namespace opet.Service
         {
             return Math.Round((point - start) * scale / tileSize) * tileSize;
         }
-        private static int ConvertToMatrixPoint(double coordinate)
-        {
-            return (int)Math.Ceiling(coordinate / tileSize);
-        }
         private static Point CreatePoint(double longitude, double latitude, int round)
         {
             var point = new Point
