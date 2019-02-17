@@ -1,4 +1,5 @@
 ﻿using opet.Models;
+using PZ3.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,7 @@ namespace opet.Service
         private static readonly double longitudeScale = mapSize / (endLongitude - startLongitude);
         private static readonly double latitudeScale = mapSize / (endLatitude - startLatitude);
 
-        private static readonly List<Point> ExistingPoints = new List<Point>();
+        private static readonly Dictionary<double,Point> ExistingPoints = new Dictionary<double, Point>();
 
         public static void ToLatLon(double utmX, double utmY, int zoneUTM, out double latitude, out double longitude)
         {
@@ -171,20 +172,19 @@ namespace opet.Service
             {
                 Ellipse elipse = InstantiateEllipse(Colors.DarkGreen);
 
-                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude) || ExistingPoints.ContainsKey(item.Id))
                 {
                     continue;
                 }
 
                 double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
                 double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
-                var point = AddPoint(longitude, latitude, 1);
-                ExistingPoints.Add(point);
+                var point = CreatePoint(longitude, latitude, 1);
+                ExistingPoints.Add(item.Id,point);
 
                 SetOnCanvas(point.X, point.Y, elipse);
 
                 elipse.ToolTip = "Substation: " + item.Name.ToString();
-
                 subs.Add(elipse);
             }
 
@@ -198,20 +198,19 @@ namespace opet.Service
             {
                 Ellipse elipse = InstantiateEllipse(Colors.DarkBlue);
 
-                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude) || ExistingPoints.ContainsKey(item.Id))
                 {
                     continue;
                 }
 
                 double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
                 double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
-                var point = AddPoint(longitude, latitude, 1);
-                ExistingPoints.Add(point);
+                var point = CreatePoint(longitude, latitude, 1);
+                ExistingPoints.Add(item.Id,point);
 
                 SetOnCanvas(point.X, point.Y, elipse);
 
                 elipse.ToolTip = "Switch: " + item.Name.ToString();
-
                 sw.Add(elipse);
             }
 
@@ -225,24 +224,53 @@ namespace opet.Service
             {
                 Ellipse elipse = InstantiateEllipse(Colors.Red);
 
-                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude) || ExistingPoints.ContainsKey(item.Id))
                 {
                     continue;
                 }
 
                 double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
                 double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
-                var point = AddPoint(longitude, latitude, 1);
-                ExistingPoints.Add(point);
+                var point = CreatePoint(longitude, latitude, 1);
+                ExistingPoints.Add(item.Id,point);
 
                 SetOnCanvas(point.X, point.Y, elipse);
 
                 elipse.ToolTip = "Node: " + item.Name.ToString();
-
                 sw.Add(elipse);
             }
 
             return sw;
+        }
+
+        public static void DrawLines(List<opet.Models.Line> lines, Canvas map)
+        {
+            foreach(var item in lines)
+            {
+                if(!ExistingPoints.ContainsKey(item.FirstEnd) || !ExistingPoints.ContainsKey(item.SecondEnd))
+                {
+                    continue;
+                }
+
+                List<Point> path = BreadthFirstSearch.Search(ExistingPoints[item.FirstEnd],ExistingPoints[item.SecondEnd]);
+
+                if(path != null)
+                {
+                    for (int i = 0; i < path.Count() - 1; i++)
+                    {
+                        System.Windows.Shapes.Line l = new System.Windows.Shapes.Line();
+                        l.Stroke = Brushes.DeepSkyBlue;
+                        l.X1 = path[i].X;
+                        l.Y1 = path[i].Y;
+
+                        l.X2 = path[i + 1].X;
+                        l.Y2 = path[i + 1].Y;
+                        l.StrokeThickness = 2;
+
+                        map.Children.Add(l);
+                    }  
+                }
+            }
         }
 
         private static bool CheckIfCoordinatesAreValid(double longitude, double latitude)
@@ -268,28 +296,32 @@ namespace opet.Service
         {
             return Math.Round((point - start) * scale / tileSize) * tileSize;
         }
-        private static Point AddPoint(double longitude, double latitude, int round)
+        private static int ConvertToMatrixPoint(double coordinate)
+        {
+            return (int)Math.Ceiling(coordinate / tileSize);
+        }
+        private static Point CreatePoint(double longitude, double latitude, int round)
         {
             var point = new Point
             {
                 X = longitude,
                 Y = latitude,
             };
-            if (ExistingPoints.Any(x => x.Y == latitude && x.X == longitude))
+            if (ExistingPoints.Any(x => x.Value.X == point.X && x.Value.Y == point.Y))
             {
                 switch (round)
                 {
                     case 1:
-                        point = AddPoint(longitude + tileSize, latitude, 2);
+                        point = CreatePoint(longitude + tileSize, latitude, 2);
                         return point;
                     case 2:
-                        point = AddPoint(longitude - 2 * tileSize, latitude, 3);
+                        point = CreatePoint(longitude - 2 * tileSize, latitude, 3);
                         return point;
                     case 3:
-                        point = AddPoint(longitude + tileSize, latitude + tileSize, 4);
+                        point = CreatePoint(longitude + tileSize, latitude + tileSize, 4);
                         return point;
                     case 4:
-                        point = AddPoint(longitude, latitude - 2 * tileSize, 1);
+                        point = CreatePoint(longitude, latitude - 2 * tileSize, 1);
                         return point;
                 }
             }

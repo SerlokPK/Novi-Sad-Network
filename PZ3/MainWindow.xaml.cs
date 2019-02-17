@@ -48,6 +48,8 @@ namespace PZ3
             {
                 Map.Children.Add(item);
             }
+
+            MapService.DrawLines(BaseModel.Lines, Map);
         }
     }
 }
