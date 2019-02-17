@@ -33,8 +33,18 @@ namespace PZ3
         {
             List<Ellipse> elipses = new List<Ellipse>();
 
-            elipses = MapService.DrawSubstations(BaseModel.Substation);
+            elipses = MapService.DrawSubstations(BaseModel.Substations);
             foreach(var item in elipses)
+            {
+                Map.Children.Add(item);
+            }
+            elipses = MapService.DrawSwitches(BaseModel.Switches);
+            foreach(var item in elipses)
+            {
+                Map.Children.Add(item);
+            }
+            elipses = MapService.DrawNodes(BaseModel.Nodes);
+            foreach (var item in elipses)
             {
                 Map.Children.Add(item);
             }

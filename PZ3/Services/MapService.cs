@@ -70,7 +70,7 @@ namespace opet.Service
 
         public static BaseModel ParseXml()
         {
-            var filename = "test.xml";
+            var filename = "Geographic.xml";
             var currentDirectory = Directory.GetCurrentDirectory();
             var purchaseOrderFilepath = System.IO.Path.Combine(currentDirectory, filename);
 
@@ -161,7 +161,7 @@ namespace opet.Service
                 }
             }
 
-            return new BaseModel { Substation = substations, Switch = switches, Node = nodes, Line = lines };
+            return new BaseModel { Substations = substations, Switches = switches, Nodes = nodes, Lines = lines };
         }
 
         public static List<Ellipse> DrawSubstations(List<Substation> substations)
@@ -169,19 +169,19 @@ namespace opet.Service
             List<Ellipse> subs = new List<Ellipse>();
             foreach (var item in substations)
             {
-                Ellipse elipse = new Ellipse();
-                elipse.Height = 8;
-                elipse.Width = 8;
-                elipse.Fill = new SolidColorBrush(Colors.DarkViolet);
-                elipse.StrokeThickness = 2;
+                Ellipse elipse = InstantiateEllipse(Colors.DarkGreen);
+
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                {
+                    continue;
+                }
 
                 double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
                 double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
                 var point = AddPoint(longitude, latitude, 1);
                 ExistingPoints.Add(point);
 
-                Canvas.SetTop(elipse, point.Y);
-                Canvas.SetLeft(elipse, point.X);
+                SetOnCanvas(point.X, point.Y, elipse);
 
                 elipse.ToolTip = "Substation: " + item.Name.ToString();
 
@@ -191,11 +191,83 @@ namespace opet.Service
             return subs;
         }
 
+        public static List<Ellipse> DrawSwitches(List<Switch> switches)
+        {
+            List<Ellipse> sw = new List<Ellipse>();
+            foreach (var item in switches)
+            {
+                Ellipse elipse = InstantiateEllipse(Colors.DarkBlue);
+
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                {
+                    continue;
+                }
+
+                double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
+                double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
+                var point = AddPoint(longitude, latitude, 1);
+                ExistingPoints.Add(point);
+
+                SetOnCanvas(point.X, point.Y, elipse);
+
+                elipse.ToolTip = "Switch: " + item.Name.ToString();
+
+                sw.Add(elipse);
+            }
+
+            return sw;
+        }
+
+        public static List<Ellipse> DrawNodes(List<Node> nodes)
+        {
+            List<Ellipse> sw = new List<Ellipse>();
+            foreach (var item in nodes)
+            {
+                Ellipse elipse = InstantiateEllipse(Colors.Red);
+
+                if (CheckIfCoordinatesAreValid(item.Longitude, item.Latitude))
+                {
+                    continue;
+                }
+
+                double longitude = ConvertMapPoint(item.Longitude, longitudeScale, startLongitude) - 5;
+                double latitude = ConvertMapPoint(item.Latitude, latitudeScale, startLatitude) - 5;
+                var point = AddPoint(longitude, latitude, 1);
+                ExistingPoints.Add(point);
+
+                SetOnCanvas(point.X, point.Y, elipse);
+
+                elipse.ToolTip = "Node: " + item.Name.ToString();
+
+                sw.Add(elipse);
+            }
+
+            return sw;
+        }
+
+        private static bool CheckIfCoordinatesAreValid(double longitude, double latitude)
+        {
+            return longitude < startLongitude || longitude > endLongitude || latitude < startLongitude || latitude > endLatitude;
+        }
+        private static void SetOnCanvas(double x, double y,Ellipse ellipse)
+        {
+            Canvas.SetTop(ellipse, y);
+            Canvas.SetLeft(ellipse, x);
+        }
+        private static Ellipse InstantiateEllipse(Color color)
+        {
+            Ellipse elipse = new Ellipse();
+            elipse.Height = 8;
+            elipse.Width = 8;
+            elipse.Fill = new SolidColorBrush(color);
+            elipse.StrokeThickness = 2;
+
+            return elipse;
+        }
         private static double ConvertMapPoint(double point, double scale, double start)
         {
             return Math.Round((point - start) * scale / tileSize) * tileSize;
         }
-
         private static Point AddPoint(double longitude, double latitude, int round)
         {
             var point = new Point

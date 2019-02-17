@@ -8,9 +8,9 @@ namespace opet.Models
 {
     public class BaseModel
     {
-        public List<Substation> Substation { get; set; }
-        public List<Node> Node { get; set; }
-        public List<Switch> Switch { get; set; }
-        public List<Line> Line { get; set; }
+        public List<Substation> Substations { get; set; }
+        public List<Node> Nodes { get; set; }
+        public List<Switch> Switches { get; set; }
+        public List<Line> Lines { get; set; }
     }
 }
