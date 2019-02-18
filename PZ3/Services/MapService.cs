@@ -252,7 +252,7 @@ namespace opet.Service
                     continue;
                 }
 
-                List<Point> path = BreadthFirstSearch.Search(ExistingPoints[item.FirstEnd],ExistingPoints[item.SecondEnd]);
+                List<Point> path = ClosestPathFinder.Search(ExistingPoints[item.FirstEnd],ExistingPoints[item.SecondEnd]);
 
                 if(path != null)
                 {
